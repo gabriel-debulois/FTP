@@ -1,0 +1,28 @@
+#!/bin/sh
+sudo echo "export PATH='$PATH:/usr/sbin/'" >> ~/.bashrc
+sudo source ~/.bashrc
+
+#D'abord mettre à jour les paquets
+apt-get update
+
+#Ensuite installer FTP
+apt-get install proftpd
+apt-get install proftpd-mod-crypto
+
+#Puis nous ajoutons les utilisateurs Merry et Pippin
+echo "/bin/false" >> /etc/shells
+adduser merry --shell /bin/false --home /home/merry
+echo merry:kalimac | chpasswd
+adduser pippin --shell /bin/false --home /home/pippin
+echo pippin:secondbreakfast | chpasswd
+
+cp configftp /etc/proftpd/conf.d
+echo "Include /etc/proftpd/conf.d/configftp" >> /etc/proftpd/proftpd.conf
+
+#Enfin il reste à sécuriser en configurant TLS et SSL
+#D'abord on créer le certificat et la clef
+mkdir /etc/proftpd/ssl
+openssl req -new -x509 -days 365 -nodes -out /etc/proftpd/ssl/proftpd-cert.pem -keyout /etc/proftpd/ssl/proftpd-key.pem
+
+#Enfin il faut redémarrer le serveur
+systemctl restart proftpd
